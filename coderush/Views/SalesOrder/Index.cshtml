@@ -1,0 +1,314 @@
+﻿
+@{
+    ViewData["Title"] = "Sales Order";
+
+    ViewBag.HelpTitle = ViewData["Title"];
+    ViewBag.HelpMessage1 = "Sales order document is a confirmation order document that will sent to customer. With this document, customer confirmed that they order product to us. Usually sales order document is printed and then sent to customers.";
+    ViewBag.HelpMessage2 = "Reminder: Sales module will allow you to do the sales cycle end to end. Start from: creating Sales Order (SO) document => then products Shipment (DO) to customers => then invoicing the customers => then finally receiving payment from customers.";
+}
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+        <!-- Default box -->
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title text-primary"><i class="fa fa-cart-plus"></i> @ViewData["Title"]</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip"
+                            title="Collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div id="Grid"></div>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer">
+               
+            </div>
+            <!-- /.box-footer-->
+        </div>
+        <!-- /.box -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<script id="templateForm" type="text/template">
+    <input hidden id="SalesOrderId" name="SalesOrderId" value="{{:SalesOrderId}}" />
+    <table cellspacing="10">
+        <tr>
+            <td>
+                Sales Order #
+            </td>
+            <td>
+                <input id="SalesOrderName" name="SalesOrderName" value="{{:SalesOrderName}}" />
+            </td>
+            <td>
+                Customer Ref#
+            </td>
+            <td>
+                <input id="CustomerRefNumber" name="CustomerRefNumber" value="{{:CustomerRefNumber}}" />
+            </td>
+           
+        </tr>
+        <tr>
+            <td>
+                Branch
+            </td>
+            <td>
+                <input id="BranchId" name="BranchId" value="{{:BranchId}}" />
+            </td>
+            <td>
+                Order Date
+            </td>
+            <td>
+                <input id="OrderDate" name="OrderDate" value="{{:OrderDate}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Customer
+            </td>
+            <td>
+                <input id="CustomerId" name="CustomerId" value="{{:CustomerId}}" />
+            </td>
+            <td>
+                Delivery Date
+            </td>
+            <td>
+                <input id="DeliveryDate" name="DeliveryDate" value="{{:DeliveryDate}}" />
+            </td>
+           
+        </tr>
+        <tr>
+            
+            <td>
+                Currency
+            </td>
+            <td>
+                <input id="CurrencyId" name="CurrencyId" value="{{:CurrencyId}}" />
+            </td>
+            <td>
+                Freight
+            </td>
+            <td>
+                <input id="Freight" name="Freight" value="{{:Freight}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                SalesType
+            </td>
+            <td>
+                <input id="SalesTypeId" name="SalesTypeId" value="{{:SalesTypeId}}"/>
+            </td>
+            <td>Remarks</td>
+            <td>
+                <input id="Remarks" name="Remarks" value="{{:Remarks}}" />
+            </td>
+        </tr>
+    </table>
+</script>
+
+@section Styles{
+
+}
+
+@section Scripts{
+
+    
+
+
+    <script type="text/javascript">
+
+        var dataManagerBranch;
+        var dataManagerCustomer;
+        var dataManagerSalesType;
+        var dataManagerCurrency;
+        
+
+        $(function () {
+
+            bindDataFromWebApi();
+
+            var dataManager = ej.DataManager({
+                url: "/api/SalesOrder",
+                adaptor: new ej.WebApiAdaptor(),
+                offline: true
+            });
+            
+            dataManager.ready.done(function (e) { 
+                $("#Grid").ejGrid({
+                    dataSource: ej.DataManager({
+                        json: e.result,
+                        adaptor: new ej.remoteSaveAdaptor(),
+                        insertUrl: "/api/SalesOrder/Insert",
+                        updateUrl: "/api/SalesOrder/Update",
+                        removeUrl: "/api/SalesOrder/Remove",
+                    }),
+                    toolbarSettings: {
+                        showToolbar: true,
+                        toolbarItems: ["add", "edit", "delete", "update", "cancel", "search", "printGrid"]
+                    },
+                    editSettings: {
+                        allowEditing: true,
+                        allowAdding: true,
+                        allowDeleting: true,
+                        showDeleteConfirmDialog: true,
+                        editMode: "dialogtemplate",
+                        dialogEditorTemplateID: "#templateForm",
+                    },
+                    isResponsive: true,
+                    enableResponsiveRow: true,
+                    allowSorting: true,
+                    allowSearching: true,
+                    allowFiltering: true,
+                    filterSettings: {
+                        filterType: "excel",
+                        maxFilterChoices: 100,
+                        enableCaseSensitivity: false
+                    },
+                    allowPaging: true,
+                    pageSettings: { pageSize: 10, printMode: ej.Grid.PrintMode.CurrentPage },
+                    columns: [
+                        { headerText: '', width: 50, template: "<a href='/SalesOrder/Detail/{{:SalesOrderId}}'><i class='fa fa-tag'></i></a>" },
+                        { field: "SalesOrderId", type: 'number', headerText: 'SO Id', defaultValue: 0, isPrimaryKey: true, isIdentity: true, visible: false },
+                        { field: "SalesOrderName", type: 'string', headerText: 'SO#', allowEditing: false },
+                        { field: "BranchId", type: 'number', headerText: 'Branch', foreignKeyField: "BranchId", foreignKeyValue: "BranchName", dataSource: dataManagerBranch, validationRules: { required: true } },
+                        { field: "CustomerId", type: 'number', headerText: 'Customer', foreignKeyField: "CustomerId", foreignKeyValue: "CustomerName", dataSource: dataManagerCustomer, validationRules: { required: true } },
+                        { field: "OrderDate", type: 'date', headerText: 'Order Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "DeliveryDate", type: 'date', headerText: 'Delivery Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "CustomerRefNumber", type: 'string', headerText: 'Cust. Ref#', validationRules: { required: true } },
+                        { field: "Freight", type: 'number', defaultValue: 0, headerText: 'Payment Amount', editType: "numericedit", format: "{0:n2}", visible: false },
+                        { field: "Remarks", type: 'string', headerText: 'Remarks', defaultValue: 'Thank you for your business.', visible: false },
+                    ],
+                    actionComplete: "complete",
+                });
+            });
+
+            
+        });
+
+        function complete(args) {
+
+            gridActionNotification(args);
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+
+                bindDataFromWebApi();
+
+                formatFormControl();
+            }
+
+            if (args.requestType == 'beginedit') {
+                $("#" + this._id + "_dialogEdit").ejDialog({ title: "Edit Record" });
+            }
+        }
+
+        function branchDdlChange(e) {
+            $.ajax({
+                url: '/api/Currency/GetByBranchId/' + e.selectedValue,
+                type: 'GET',
+                success: function (data) {
+                    $("#CurrencyId").ejDropDownList({
+                        dataSource: [data],
+                        fields: { id: 'CurrencyId', text: 'CurrencyCode', value: 'CurrencyId' },
+                        value: data.CurrencyId
+                    });
+                }
+            })
+        }
+
+        function formatFormControl() {
+            
+            $("#SalesOrderName").ejMaskEdit({
+                inputMode: 'Text',
+                enabled: false
+            });
+
+            $("#BranchId").ejDropDownList({
+                dataSource: dataManagerBranch,
+                fields: { value: "BranchId", text: "BranchName" },
+                change: 'branchDdlChange',
+                validationRules: { required: true },
+                validationMessage: { required: 'Branch is required.' }
+            });
+
+            $("#CustomerId").ejDropDownList({
+                dataSource: dataManagerCustomer,
+                fields: { value: "CustomerId", text: "CustomerName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Customer is required.' }
+            });
+
+            $("#OrderDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Order Date is required.' }
+            });
+
+            $("#DeliveryDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Delivery Date is required.' }
+            });
+
+            $("#SalesTypeId").ejDropDownList({
+                dataSource: dataManagerSalesType,
+                fields: { value: "SalesTypeId", text: "SalesTypeName" },
+            });
+
+            $("#CurrencyId").ejDropDownList({
+                dataSource: dataManagerCurrency,
+                fields: { value: "CurrencyId", text: "CurrencyCode" },
+                enabled: false
+            });
+
+            $("#CustomerRefNumber").ejMaskEdit({
+                inputMode: 'Text',
+                validationRules: { required: true },
+                validationMessage: { required: 'Customer Ref Number is required.' }
+            });
+
+            $("#Remarks").ejMaskEdit({
+                inputMode: 'Text',
+            });
+
+            $("#Freight").ejNumericTextbox({
+                format: '{0:n2}',
+                validationRules: { required: true },
+                validationMessage: { required: 'Freight is required.' },
+            });
+        }
+
+        function bindDataFromWebApi() {
+            dataManagerBranch = ej.DataManager({
+                url: "/api/Branch",
+                adaptor: new ej.WebApiAdaptor(),
+            });
+
+            dataManagerCustomer = ej.DataManager({
+                url: "/api/Customer",
+                adaptor: new ej.WebApiAdaptor(),
+            });
+
+            dataManagerSalesType = ej.DataManager({
+                url: "/api/SalesType",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerCurrency = ej.DataManager({
+                url: "/api/Currency",
+                adaptor: new ej.WebApiAdaptor()
+            });
+        }
+
+
+    </script>
+}
+

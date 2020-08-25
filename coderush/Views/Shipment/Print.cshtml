@@ -1,0 +1,161 @@
+﻿@model PrintShipmentViewModel
+
+@{
+    ViewData["Title"] = "Printed Delivery Order Document.";
+    Layout = "~/Views/Shared/_AdminltePrint.cshtml";
+}
+
+<section class="invoice">
+    <!-- title row -->
+    <div class="row">
+        <div class="col-xs-12">
+            <h2 class="page-header">
+                <i class="fa fa-list"></i> Delivery Order
+            </h2>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- info row -->
+    <div class="row invoice-info">
+        <div class="col-sm-4 invoice-col">
+            Sender Address
+            <address>
+                <strong>@Model.Branch.BranchName</strong><br>
+                @Model.Branch.Address<br>
+                @Model.Branch.City , @Model.Branch.ZipCode<br>
+                attn: @Model.Branch.ContactPerson <br />
+                @Model.Branch.Email <br />
+                @Model.Branch.Phone
+            </address>
+        </div>
+        <!-- /.col -->
+        <div class="col-sm-4 invoice-col">
+            Receiver Address
+            <address>
+                <strong>@Model.Customer.CustomerName</strong><br>
+                @Model.Customer.Address<br>
+                @Model.Customer.City  @Model.Customer.ZipCode<br>
+                attn: @Model.Customer.ContactPerson <br />
+                @Model.Customer.Email <br />
+                @Model.Customer.Phone
+            </address>
+        </div>
+        <!-- /.col -->
+        <div class="col-sm-4 invoice-col">
+            <div class="row">
+                <div class="col-sm-6"><b>DO Number:</b></div>
+                <div class="col-sm-6">@Model.Shipment.ShipmentName</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>DO Date:</b></div>
+                <div class="col-sm-6">@Model.Shipment.ShipmentDate.Date.ToShortDateString()</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>SO Number:</b></div>
+                <div class="col-sm-6">@Model.SalesOrder.SalesOrderName</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>SO Date:</b></div>
+                <div class="col-sm-6">@Model.SalesOrder.OrderDate.Date.ToShortDateString()</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>Customer Ref#:</b></div>
+                <div class="col-sm-6">@Model.SalesOrder.CustomerRefNumber</div>
+            </div>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+    <!-- Table row -->
+    <div class="row">
+        <div class="col-xs-12 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th width="10%">Barcode</th>
+                        <th width="60%">Product</th>
+                        <th width="15%">Qty Shipped</th>
+                        <th width="15%">Qty Received</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Lines)
+                    {
+                        <tr>
+                            <td><div id="@item.SalesOrderLine.ProductId"></div></td>
+                            <td>
+                                <b>@item.Product.ProductName </b>
+                                <i>@item.Product.Description</i>
+                            </td>
+                            <td>@item.SalesOrderLine.Quantity</td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+    <div class="row">
+        <!-- accepted payments column -->
+        <div class="col-xs-6">
+            <p class="lead">Descriptions:</p>
+            <p class="text-muted well well-sm no-shadow" style="margin-top: 10px;">
+                @Model.Shipment.Remarks
+            </p>
+        </div>
+        <!-- /.col -->
+        <div class="col-xs-6">
+            <p class="lead">Receiver Details</p>
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th><b>Receive Date </b></th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th><b>Receive By </b></th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th><b>Signature </b></th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th><b>Receive Note </b></th>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+</section>
+
+@section Scripts{
+    <script>
+
+        $(function () {
+
+            @foreach (var item in Model.Lines)
+            {
+               <text>
+                    $("#@item.SalesOrderLine.ProductId").ejBarcode({
+                        text: "@item.Product.Barcode",
+                        symbologyType: "code39",
+                        displayText: true,
+                        barHeight: 45,
+                    });
+               </text>
+            }
+
+
+
+            window.print();
+        });
+
+    </script>
+}
+

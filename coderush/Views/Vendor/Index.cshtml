@@ -1,0 +1,250 @@
+﻿
+@{
+    ViewData["Title"] = "Vendor";
+
+    ViewBag.HelpTitle = ViewData["Title"];
+    ViewBag.HelpMessage1 = "This is the place where you can record your vendor or supplier data complete with their address and contact person.";
+    ViewBag.HelpMessage2 = "Reminder: Purchase module will allow you to do the purchase cycle end to end. Start from: creating Purchase Order (PO) document => then goods receiving from vendor warehouse => then vendor billing => then finally vendor payment.";
+}
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+        <!-- Default box -->
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title text-primary"><i class="fa fa-building-o"></i> @ViewData["Title"]</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip"
+                            title="Collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div id="Grid"></div>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer">
+
+            </div>
+            <!-- /.box-footer-->
+        </div>
+        <!-- /.box -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<script id="templateForm" type="text/template">
+    <input hidden id="VendorId" name="VendorId" value="{{:VendorId}}" />
+    <table cellspacing="10">
+        <tr>
+            <td>
+                Vendor Name
+            </td>
+            <td colspan="3">
+                <input id="VendorName" name="VendorName" value="{{:VendorName}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Contact Person
+            </td>
+            <td colspan="3">
+                <input id="ContactPerson" name="ContactPerson" value="{{:ContactPerson}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Address
+            </td>
+            <td colspan="3">
+                <input id="Address" name="Address" value="{{:Address}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                City
+            </td>
+            <td>
+                <input id="City" name="City" value="{{:City}}" />
+            </td>
+            <td>
+                State
+            </td>
+            <td>
+                <input id="State" name="State" value="{{:State}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                ZipCode
+            </td>
+            <td>
+                <input id="ZipCode" name="ZipCode" value="{{:ZipCode}}" />
+            </td>
+            <td>
+                Phone
+            </td>
+            <td>
+                <input id="Phone" name="Phone" value="{{:Phone}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Email
+            </td>
+            <td>
+                <input id="Email" name="Email" value="{{:Email}}" />
+            </td>
+            <td>
+                Vendor Type
+            </td>
+            <td>
+                <input id="VendorTypeId" name="VendorTypeId" value="{{:VendorTypeId}}" />
+            </td>
+        </tr>
+    </table>
+</script>
+
+
+@section Styles{
+
+}
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+        var dataManagerVendorType;
+
+        $(function () {
+
+            bindDataFromWebApi();
+
+            var dataManager = ej.DataManager({
+                url: "/api/Vendor",
+                adaptor: new ej.WebApiAdaptor(),
+                offline: true
+            });
+
+            dataManager.ready.done(function (e) {
+                $("#Grid").ejGrid({
+                    dataSource: ej.DataManager({
+                        json: e.result,
+                        adaptor: new ej.remoteSaveAdaptor(),
+                        insertUrl: "/api/Vendor/Insert",
+                        updateUrl: "/api/Vendor/Update",
+                        removeUrl: "/api/Vendor/Remove",
+                    }),
+                    toolbarSettings: {
+                        showToolbar: true,
+                        toolbarItems: ["add", "edit", "delete", "update", "cancel", "search", "printGrid"]
+                    },
+                    editSettings: {
+                        allowEditing: true,
+                        allowAdding: true,
+                        allowDeleting: true,
+                        showDeleteConfirmDialog: true,
+                        editMode: "dialogtemplate",
+                        dialogEditorTemplateID: "#templateForm",
+                    },
+                    isResponsive: true,
+                    enableResponsiveRow: true,
+                    allowSorting: true,
+                    allowSearching: true,
+                    allowFiltering: true,
+                    filterSettings: {
+                        filterType: "excel",
+                        maxFilterChoices: 100,
+                        enableCaseSensitivity: false
+                    },
+                    allowPaging: true,
+                    pageSettings: { pageSize: 10, printMode: ej.Grid.PrintMode.CurrentPage },
+                    columns: [
+                        { field: "VendorId", type: 'number', headerText: 'Vendor Id', defaultValue: 0, isPrimaryKey: true, isIdentity: true, visible: false },
+                        { field: "VendorName", type: 'string', headerText: 'Vendor Name' },
+                        { field: "City", type: 'string', headerText: 'City', },
+                        { field: "Address", type: 'string', headerText: 'Address', },
+                        { field: "ContactPerson", type: 'string', headerText: 'CP', },
+                    ],
+                    actionComplete: "complete",
+                });
+            });
+
+
+        });
+
+        function complete(args) {
+            gridActionNotification(args);
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+
+                bindDataFromWebApi();
+
+                formatFormControl();
+            }
+
+            if (args.requestType == 'beginedit') {
+                $("#" + this._id + "_dialogEdit").ejDialog({ title: "Edit Record" });
+            }
+        }
+
+        function formatFormControl() {
+            $("#VendorName").ejMaskEdit({
+                inputMode: 'Text',
+                width: 410,
+                validationMessage: { required: 'Vendor Name is required.' }
+            });
+            $("#Address").ejMaskEdit({
+                inputMode: 'Text',
+                width: 410,
+                validationRules: { required: true },
+                validationMessage: { required: 'Address is required.' }
+            });
+            $("#ContactPerson").ejMaskEdit({
+                inputMode: 'Text',
+                width: 410,
+                validationRules: { required: true },
+                validationMessage: { required: 'Contact Person is required.' }
+            });
+            $("#City").ejMaskEdit({
+                inputMode: 'Text',
+            });
+            $("#State").ejMaskEdit({
+                inputMode: 'Text',
+            });
+            $("#ZipCode").ejMaskEdit({
+                inputMode: 'Text',
+            });
+            $("#Phone").ejMaskEdit({
+                inputMode: 'Text',
+            });
+            $("#Email").ejMaskEdit({
+                inputMode: 'Text',
+            });
+            $("#VendorTypeId").ejDropDownList({
+                dataSource: dataManagerVendorType,
+                fields: { value: "VendorTypeId", text: "VendorTypeName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Vendor Type is required.' }
+            });
+        }
+
+
+        function bindDataFromWebApi() {
+            dataManagerVendorType = ej.DataManager({
+                url: "/api/VendorType",
+                adaptor: new ej.WebApiAdaptor()
+            });
+        }
+
+
+    </script>
+}
+

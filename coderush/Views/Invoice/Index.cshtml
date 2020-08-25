@@ -1,0 +1,376 @@
+﻿
+@{
+    ViewData["Title"] = "Invoice";
+
+    ViewBag.HelpTitle = ViewData["Title"];
+    ViewBag.HelpMessage1 = "Invoice is a commercial document that ask for payment to customer related to goods or service that customer buy from us in which the goods or service already delivered. Usually invoice is printed and then sent to customer billing address.";
+    ViewBag.HelpMessage2 = "Reminder: Sales module will allow you to do the sales cycle end to end. Start from: creating Sales Order (SO) document => then products Shipment (DO) to customers => then invoicing the customers => then finally receiving payment from customers.";
+}
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+        <!-- Default box -->
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title text-primary"><i class="fa fa-file-text-o"></i> @ViewData["Title"]</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip"
+                            title="Collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div id="Grid"></div>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer">
+               
+            </div>
+            <!-- /.box-footer-->
+        </div>
+        <!-- /.box -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<script id="templateForm" type="text/template">
+    <input hidden id="InvoiceId" name="InvoiceId" value="{{:InvoiceId}}" />
+    <table cellspacing="10">
+        <tr>
+            <td>
+                Invoice #
+            </td>
+            <td>
+                <input id="InvoiceName" name="InvoiceName" value="{{:InvoiceName}}" />
+            </td>
+            <td>
+                Shipment
+            </td>
+            <td>
+                <input id="ShipmentId" name="ShipmentId" value="{{:ShipmentId}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Invoice Date
+            </td>
+            <td>
+                <input id="InvoiceDate" name="InvoiceDate" value="{{:InvoiceDate}}" />
+            </td>
+            <td>
+                Invoice Due Date
+            </td>
+            <td>
+                <input id="InvoiceDueDate" name="InvoiceDueDate" value="{{:InvoiceDueDate}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Invoice Type
+            </td>
+            <td>
+                <input id="InvoiceTypeId" name="InvoiceTypeId" value="{{:InvoiceTypeId}}" />
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>
+                Remarks
+            </td>
+            <td colspan="3">
+                <input id="Remarks" name="Remarks" value="{{:Remarks}}" />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <a href="/Invoice/Print/{{:InvoiceId}}" class="btn btn-warning pull-right" target="_blank"><i class="fa fa-print"></i> Print Invoice</a>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <div id="GridLine"></div>
+            </td>
+        </tr>
+    </table>
+</script>
+
+@section Styles{
+
+}
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+        var dataManagerShipment;
+        var dataManagerInvoiceType;
+        var dataManagerProduct;
+        var dataManagerSalesOrder;
+
+        $(function () {
+
+            bindDataFromWebApi();
+
+            var dataManager = ej.DataManager({
+                url: "/api/Invoice",
+                adaptor: new ej.WebApiAdaptor(),
+                offline: true
+            });
+            
+
+            dataManager.ready.done(function (e) { 
+                $("#Grid").ejGrid({
+                    dataSource: ej.DataManager({
+                        json: e.result,
+                        adaptor: new ej.remoteSaveAdaptor(),
+                        insertUrl: "/api/Invoice/Insert",
+                        updateUrl: "/api/Invoice/Update",
+                        removeUrl: "/api/Invoice/Remove",
+                    }),
+                    toolbarSettings: {
+                        showToolbar: true,
+                        toolbarItems: ["add", "edit", "delete", "update", "cancel", "search", "printGrid"]
+                    },
+                    editSettings: {
+                        allowEditing: true,
+                        allowAdding: true,
+                        allowDeleting: true,
+                        showDeleteConfirmDialog: true,
+                        editMode: "dialogtemplate",
+                        dialogEditorTemplateID: "#templateForm",
+                    },
+                    isResponsive: true,
+                    enableResponsiveRow: true,
+                    allowSorting: true,
+                    allowSearching: true,
+                    allowFiltering: true,
+                    filterSettings: {
+                        filterType: "excel",
+                        maxFilterChoices: 100,
+                        enableCaseSensitivity: false
+                    },
+                    allowPaging: true,
+                    pageSettings: { pageSize: 10, printMode: ej.Grid.PrintMode.CurrentPage },
+                    columns: [
+                        { headerText: '', width: 50, template: "<a href='/Invoice/Print/{{:InvoiceId}}' target='_blank'><i class='fa fa-print'></i></a>" },
+                        { field: "InvoiceId", type: 'number', headerText: 'Invoice', defaultValue: 0, isPrimaryKey: true, isIdentity: true, visible: false },
+                        { field: "InvoiceName", type: 'string', headerText: 'Invoice#', allowEditing: false },
+                        { field: "ShipmentId", type: 'number', headerText: 'Shipment / DO', foreignKeyField: "ShipmentId", foreignKeyValue: "ShipmentName", dataSource: dataManagerShipment, validationRules: { required: true } },
+                        { field: "InvoiceDate", type: 'date', headerText: 'Invoice Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "InvoiceDueDate", type: 'date', headerText: 'Invoice Due Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "InvoiceTypeId", type: 'number', headerText: 'Invoice Type', foreignKeyField: "InvoiceTypeId", foreignKeyValue: "InvoiceTypeName", dataSource: dataManagerInvoiceType },
+                        { field: "Remarks", type: 'string', headerText: 'Remarks', defaultValue: 'After processing the payment, please confirm your payment by sending us an email with proof of payment.', visible: false },
+                    ],
+                    actionComplete: "complete",
+                });
+            });
+
+            
+        });
+
+        function complete(args) {
+            gridActionNotification(args);
+
+            if (args.requestType == 'beginedit') {
+                $("#" + this._id + "_dialogEdit").ejDialog({ title: "Edit Record" });
+            }
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+
+                bindDataFromWebApi();
+
+                formatFormControl(args);
+
+                if (args.requestType == 'add') {
+
+                    renderLine(0);
+
+                } else {
+
+                    renderLine(args.rowData.ShipmentId);
+
+                }
+
+            }
+           
+        }
+
+        function formatFormControl(args) {
+
+
+            $("#InvoiceName").ejMaskEdit({
+                inputMode: 'Text',
+                enabled: false
+            });
+
+            $("#Remarks").ejMaskEdit({
+                inputMode: 'Text',
+                width: 410,
+            });
+
+            $("#InvoiceDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Invoice Date is required.' }
+            });
+
+            $("#InvoiceDueDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Invoice Due Date is required.' }
+            });
+
+            $("#InvoiceTypeId").ejDropDownList({
+                dataSource: dataManagerInvoiceType,
+                fields: { value: "InvoiceTypeId", text: "InvoiceTypeName" },
+            });
+
+            $("#ShipmentId").ejDropDownList({
+                dataSource: dataManagerShipment,
+                fields: { value: "ShipmentId", text: "ShipmentName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Shipment is required.' }
+            });
+            
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+                var selected = $('#ShipmentId').data('ejDropDownList');
+                var selectedValue = parseInt(selected.option('value'));
+                var selectedText = '';
+
+                var query = ej.Query()
+                    .select("ShipmentId", "ShipmentName");
+
+                var execute = dataManagerShipment.executeQuery(query)
+                    .done(function (e) {
+                        var selectedObject = e.actual.Items.filter(function (entry) {
+                            return entry.ShipmentId === selectedValue;
+                        });
+
+                        if (selectedObject.length > 0) {
+                            selectedText = selectedObject[0].ShipmentName;
+                        }
+                    });
+
+                $.ajax({
+                    type: 'GET',
+                    url: "/api/Shipment/GetNotInvoicedYet",
+                    success: function (data) {
+                        if (args.requestType == 'beginedit') {
+                            data.push({ 'ShipmentId': selectedValue, 'ShipmentName': selectedText });
+                        }
+
+                        $("#ShipmentId").ejDropDownList({
+                            dataSource: data,
+                            change: 'shipmentDdlChange',
+                            fields: { value: "ShipmentId", text: "ShipmentName" },
+                            validationRules: { required: true },
+                            validationMessage: { required: 'Shipment is required.' },
+                            value: (args.requestType == 'beginedit') ? selectedValue : 0
+                        });
+                    }
+                });
+            }
+
+
+        }
+
+        function shipmentDdlChange(e) {
+            renderLine(e.selectedValue);
+        }
+
+
+        function bindDataFromWebApi() {
+            dataManagerShipment = ej.DataManager({
+                url: "/api/Shipment",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerInvoiceType = ej.DataManager({
+                url: "/api/InvoiceType",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerProduct = ej.DataManager({
+                url: "/api/Product",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerSalesOrder = ej.DataManager({
+                url: "/api/SalesOrder",
+                adaptor: new ej.WebApiAdaptor()
+            });
+        }
+
+        function renderLine(id) {
+
+            var salesOrderId = 0;
+
+            var query = ej.Query()
+                .select("SalesOrderId", "ShipmentId");
+            
+            var execute = dataManagerShipment.executeQuery(query)
+                .done(function (e) {
+                    
+                    var selectedObject = e.actual.Items.filter(function (entry) {
+                        return entry.ShipmentId === id;
+                    });
+                    
+                    if (selectedObject.length > 0) {
+                        salesOrderId = selectedObject[0].SalesOrderId;
+                    }
+
+
+                    $.ajax({
+                        url: '/api/SalesOrderLine',
+                        headers: { "SalesOrderId": salesOrderId },
+                        type: 'GET',
+                        success: function (data) {
+
+                            $("#GridLine").ejGrid({
+                                dataSource: ej.DataManager({
+                                    json: data.Items,
+                                    adaptor: new ej.remoteSaveAdaptor(),
+                                }),
+                                toolbarSettings: {
+                                    showToolbar: true,
+                                    toolbarItems: []
+                                },
+                                editSettings: {
+                                    allowEditing: false,
+                                    allowAdding: false,
+                                    allowDeleting: false,
+                                },
+                                isResponsive: true,
+                                enableResponsiveRow: true,
+                                allowSorting: true,
+                                allowSearching: false,
+                                allowFiltering: false,
+                                allowPaging: false,
+                                pageSettings: { pageSize: 10 },
+                                columns: [
+                                    { field: "SalesOrderLineId", headerText: 'Line Id', isPrimaryKey: true, isIdentity: true, visible: false },
+                                    { field: "ProductId", headerText: 'Product', foreignKeyField: "ProductId", foreignKeyValue: "ProductName", dataSource: dataManagerProduct },
+                                    { field: "Quantity", headerText: 'Qty', defaultValue: 1, editType: "numericedit", format: "{0:n2}" },
+                                ],
+                            });
+                        }
+                    })
+
+
+
+                });
+            
+
+            
+        }
+
+
+    </script>
+}
+

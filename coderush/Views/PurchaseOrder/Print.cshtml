@@ -1,0 +1,177 @@
+﻿@model PrintPurchaseOrderViewModel
+
+@{
+    ViewData["Title"] = "Printed Purchase Order Document.";
+    Layout = "~/Views/Shared/_AdminltePrint.cshtml";
+}
+
+<section class="invoice">
+    <!-- title row -->
+    <div class="row">
+        <div class="col-xs-12">
+            <h2 class="page-header">
+                <i class="fa fa-list"></i> Purchase Order
+            </h2>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- info row -->
+    <div class="row invoice-info">
+        <div class="col-sm-4 invoice-col">
+            From
+            <address>
+                <strong>@Model.Branch.BranchName</strong><br>
+                @Model.Branch.Address<br>
+                @Model.Branch.City , @Model.Branch.ZipCode<br>
+                attn: @Model.Branch.ContactPerson <br />
+                @Model.Branch.Email <br />
+                @Model.Branch.Phone
+            </address>
+        </div>
+        <!-- /.col -->
+        <div class="col-sm-4 invoice-col">
+            To Vendor
+            <address>
+                <strong>@Model.Vendor.VendorName</strong><br>
+                @Model.Vendor.Address<br>
+                @Model.Vendor.City  @Model.Vendor.ZipCode<br>
+                attn: @Model.Vendor.ContactPerson <br />
+                @Model.Vendor.Email <br />
+                @Model.Vendor.Phone
+            </address>
+        </div>
+        <!-- /.col -->
+        <div class="col-sm-4 invoice-col">
+            <div class="row">
+                <div class="col-sm-6"><b>PO Number:</b></div>
+                <div class="col-sm-6">@Model.PurchaseOrder.PurchaseOrderName</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>PO Date:</b></div>
+                <div class="col-sm-6">@Model.PurchaseOrder.OrderDate.Date.ToShortDateString()</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>Expected Delivery Date:</b></div>
+                <div class="col-sm-6">@Model.PurchaseOrder.DeliveryDate.Date.ToShortDateString()</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6"><b>Currency</b></div>
+                <div class="col-sm-6">@Model.Currency.CurrencyName / @Model.Currency.CurrencyCode</div>
+            </div>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+    <!-- Table row -->
+    <div class="row">
+        <div class="col-xs-12 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+
+                        <th>Barcode</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Amt</th>
+                        <th>Disc</th>
+                        <th>SubTotal</th>
+                        <th>Tax</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Lines)
+                    {
+                        <tr>
+
+                            <td><div id="@item.PurchaseOrderLine.ProductId"></div></td>
+                            <td>
+                                <b>@item.Product.ProductName </b>
+                                <i>@item.Product.Description</i>
+                            </td>
+                            <td>@item.PurchaseOrderLine.Quantity</td>
+                            <td>@item.PurchaseOrderLine.Price.ToString("n2")</td>
+                            <td>@item.PurchaseOrderLine.Amount.ToString("n2")</td>
+                            <td>@item.PurchaseOrderLine.DiscountAmount.ToString("n2")</td>
+                            <td>@item.PurchaseOrderLine.SubTotal.ToString("n2")</td>
+                            <td>@item.PurchaseOrderLine.TaxAmount.ToString("n2")</td>
+                            <td>@item.PurchaseOrderLine.Total.ToString("n2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+    <div class="row">
+        <!-- accepted payments column -->
+        <div class="col-xs-6">
+            <p class="lead">Descriptions:</p>
+            <p class="text-muted well well-sm no-shadow" style="margin-top: 10px;">
+                @Model.PurchaseOrder.Remarks
+            </p>
+        </div>
+        <!-- /.col -->
+        <div class="col-xs-6">
+            <p class="lead">Amount Details</p>
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th><b>Amount: </b></th>
+                        <td>@Model.Currency.CurrencyCode @Model.PurchaseOrder.Amount.ToString("n2")</td>
+                    </tr>
+                    <tr>
+                        <th><b>Discount: </b></th>
+                        <td>@Model.Currency.CurrencyCode @Model.PurchaseOrder.Discount.ToString("n2")</td>
+                    </tr>
+                    <tr>
+                        <th><b>SubTotal: </b></th>
+                        <td>@Model.Currency.CurrencyCode @Model.PurchaseOrder.SubTotal.ToString("n2")</td>
+                    </tr>
+                    <tr>
+                        <th><b>Tax: </b></th>
+                        <td>@Model.Currency.CurrencyCode @Model.PurchaseOrder.Tax.ToString("n2")</td>
+                    </tr>
+                    <tr>
+                        <th><b>Freight: </b></th>
+                        <td>@Model.Currency.CurrencyCode @Model.PurchaseOrder.Freight.ToString("n2")</td>
+                    </tr>
+                    <tr>
+                        <th><h3><b>Total: </b></h3></th>
+                        <td><h3>@Model.Currency.CurrencyCode @Model.PurchaseOrder.Total.ToString("n2")</h3></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+</section>
+
+@section Scripts{
+    <script>
+
+        $(function () {
+
+            @foreach (var item in Model.Lines)
+            {
+               <text>
+                    $("#@item.PurchaseOrderLine.ProductId").ejBarcode({
+                        text: "@item.Product.Barcode",
+                        symbologyType: "code39",
+                        displayText: true,
+                        barHeight: 45,
+                    });
+               </text>
+            }
+
+
+
+            window.print();
+        });
+
+    </script>
+}
+

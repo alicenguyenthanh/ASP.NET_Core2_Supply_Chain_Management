@@ -1,0 +1,309 @@
+﻿
+@{
+    ViewData["Title"] = "Purchase Order";
+
+    ViewBag.HelpTitle = ViewData["Title"];
+    ViewBag.HelpMessage1 = "Purchase order document is confirmation order document that will sent to vendor. The document confirmed that our company will buy products from the vendor. Usually purchase order document is printed and then sent to vendors.";
+    ViewBag.HelpMessage2 = "Reminder: Purchase module will allow you to do the purchase cycle end to end. Start from: creating Purchase Order (PO) document => then goods receiving from vendor warehouse => then vendor billing => then finally vendor payment.";
+}
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+        <!-- Default box -->
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title text-primary"><i class="fa fa-cart-plus"></i> @ViewData["Title"]</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip"
+                            title="Collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div id="Grid"></div>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer">
+
+            </div>
+            <!-- /.box-footer-->
+        </div>
+        <!-- /.box -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<script id="templateForm" type="text/template">
+    <input hidden id="PurchaseOrderId" name="PurchaseOrderId" value="{{:PurchaseOrderId}}" />
+    <table cellspacing="10">
+        <tr>
+            <td>
+                Purchase Order#
+            </td>
+            <td>
+                <input id="PurchaseOrderName" name="PurchaseOrderName" value="{{:PurchaseOrderName}}" />
+            </td>
+            <td>
+              
+            </td>
+            <td>
+               
+            </td>
+
+        </tr>
+        <tr>
+            <td>
+                Branch
+            </td>
+            <td>
+                <input id="BranchId" name="BranchId" value="{{:BranchId}}" />
+            </td>
+            <td>
+                Order Date
+            </td>
+            <td>
+                <input id="OrderDate" name="OrderDate" value="{{:OrderDate}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Vendor
+            </td>
+            <td>
+                <input id="VendorId" name="VendorId" value="{{:VendorId}}" />
+            </td>
+            <td>
+                Delivery Date
+            </td>
+            <td>
+                <input id="DeliveryDate" name="DeliveryDate" value="{{:DeliveryDate}}" />
+            </td>
+
+        </tr>
+        <tr>
+
+            <td>
+                Currency
+            </td>
+            <td>
+                <input id="CurrencyId" name="CurrencyId" value="{{:CurrencyId}}" />
+            </td>
+            <td>
+                Freight
+            </td>
+            <td>
+                <input id="Freight" name="Freight" value="{{:Freight}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Purchase Type
+            </td>
+            <td>
+                <input id="PurchaseTypeId" name="PurchaseTypeId" value="{{:PurchaseTypeId}}" />
+            </td>
+            <td>Remarks</td>
+            <td>
+                <input id="Remarks" name="Remarks" value="{{:Remarks}}" />
+            </td>
+        </tr>
+    </table>
+</script>
+
+
+@section Styles{
+
+}
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+        var dataManagerBranch;
+        var dataManagerVendor;
+        var dataManagerPurchaseType;
+        var dataManagerCurrency;
+
+        $(function () {
+
+            bindDataFromWebApi();
+
+            var dataManager = ej.DataManager({
+                url: "/api/PurchaseOrder",
+                adaptor: new ej.WebApiAdaptor(),
+                offline: true
+            });
+
+            dataManager.ready.done(function (e) {
+                $("#Grid").ejGrid({
+                    dataSource: ej.DataManager({
+                        json: e.result,
+                        adaptor: new ej.remoteSaveAdaptor(),
+                        insertUrl: "/api/PurchaseOrder/Insert",
+                        updateUrl: "/api/PurchaseOrder/Update",
+                        removeUrl: "/api/PurchaseOrder/Remove",
+                    }),
+                    toolbarSettings: {
+                        showToolbar: true,
+                        toolbarItems: ["add", "edit", "delete", "update", "cancel", "search", "printGrid"]
+                    },
+                    editSettings: {
+                        allowEditing: true,
+                        allowAdding: true,
+                        allowDeleting: true,
+                        showDeleteConfirmDialog: true,
+                        editMode: "dialogtemplate",
+                        dialogEditorTemplateID: "#templateForm",
+                    },
+                    isResponsive: true,
+                    enableResponsiveRow: true,
+                    allowSorting: true,
+                    allowSearching: true,
+                    allowFiltering: true,
+                    filterSettings: {
+                        filterType: "excel",
+                        maxFilterChoices: 100,
+                        enableCaseSensitivity: false
+                    },
+                    allowPaging: true,
+                    pageSettings: { pageSize: 10, printMode: ej.Grid.PrintMode.CurrentPage },
+                    columns: [
+                        { headerText: '', width: 50, template: "<a href='/PurchaseOrder/Detail/{{:PurchaseOrderId}}'><i class='fa fa-tag'></i></a>" },
+                        { field: "PurchaseOrderId", type: 'number', headerText: 'PO Id', defaultValue: 0, isPrimaryKey: true, isIdentity: true, visible: false },
+                        { field: "PurchaseOrderName", type: 'string', headerText: 'PO#', allowEditing: false },
+                        { field: "BranchId", type: 'number', headerText: 'Branch', foreignKeyField: "BranchId", foreignKeyValue: "BranchName", dataSource: dataManagerBranch, validationRules: { required: true } },
+                        { field: "VendorId", type: 'number', headerText: 'Vendor', foreignKeyField: "VendorId", foreignKeyValue: "VendorName", dataSource: dataManagerVendor, validationRules: { required: true } },
+                        { field: "OrderDate", type: 'date', headerText: 'Order Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "DeliveryDate", type: 'date', headerText: 'Delivery Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "PurchaseTypeId", type: 'number', headerText: 'Purchase Type', foreignKeyField: "PurchaseTypeId", foreignKeyValue: "PurchaseTypeName", dataSource: dataManagerPurchaseType },
+                        { field: "Freight", type: 'number', headerText: 'Freight', defaultValue: 0, editType: "numericedit", format: "{0:n2}" },
+                        { field: "Remarks", type: 'string', headerText: 'Remarks', defaultValue: 'We reserve the right to reject goods that are not in good condition.', visible: false },
+                    ],
+                    actionComplete: "complete",
+                });
+            });
+
+
+        });
+
+        function complete(args) {
+
+            gridActionNotification(args);
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+
+                bindDataFromWebApi();
+
+                formatFormControl();
+            }
+
+            if (args.requestType == 'beginedit') {
+                $("#" + this._id + "_dialogEdit").ejDialog({ title: "Edit Record" });
+            }
+        }
+
+        function branchDdlChange(e) {
+            $.ajax({
+                url: '/api/Currency/GetByBranchId/' + e.selectedValue,
+                type: 'GET',
+                success: function (data) {
+                    $("#CurrencyId").ejDropDownList({
+                        dataSource: [data],
+                        fields: { id: 'CurrencyId', text: 'CurrencyCode', value: 'CurrencyId' },
+                        value: data.CurrencyId
+                    });
+                }
+            })
+        }
+
+        function formatFormControl() {
+
+            $("#PurchaseOrderName").ejMaskEdit({
+                inputMode: 'Text',
+                enabled: false
+            });
+
+            $("#Remarks").ejMaskEdit({
+                inputMode: 'Text',
+            });
+
+            $("#BranchId").ejDropDownList({
+                dataSource: dataManagerBranch,
+                fields: { value: "BranchId", text: "BranchName" },
+                change: 'branchDdlChange',
+                validationRules: { required: true },
+                validationMessage: { required: 'Branch is required.' }
+            });
+
+            $("#VendorId").ejDropDownList({
+                dataSource: dataManagerVendor,
+                fields: { value: "VendorId", text: "VendorName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Vendor is required.' }
+            });
+
+            $("#OrderDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Order Date is required.' }
+            });
+
+            $("#DeliveryDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Delivery Date is required.' }
+            });
+
+            $("#PurchaseTypeId").ejDropDownList({
+                dataSource: dataManagerPurchaseType,
+                fields: { value: "PurchaseTypeId", text: "PurchaseTypeName" },
+            });
+
+            $("#CurrencyId").ejDropDownList({
+                dataSource: dataManagerCurrency,
+                fields: { value: "CurrencyId", text: "CurrencyCode" },
+                enabled: false
+            });
+
+            $("#Freight").ejNumericTextbox({
+                format: '{0:n2}',
+                validationRules: { required: true },
+                validationMessage: { required: 'Freight is required.' },
+            });
+        }
+
+
+        function bindDataFromWebApi() {
+
+
+            dataManagerBranch = ej.DataManager({
+                url: "/api/Branch",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerVendor = ej.DataManager({
+                url: "/api/Vendor",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerPurchaseType = ej.DataManager({
+                url: "/api/PurchaseType",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerCurrency = ej.DataManager({
+                url: "/api/Currency",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+        }
+
+
+    </script>
+}
+

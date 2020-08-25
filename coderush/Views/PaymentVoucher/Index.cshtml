@@ -1,0 +1,438 @@
+﻿
+@{
+    ViewData["Title"] = "Payment Voucher";
+
+    ViewBag.HelpTitle = ViewData["Title"];
+    ViewBag.HelpMessage1 = "Payment voucher is a document indicating that bill has been approved for payment so the payment to vendor should be executed.";
+    ViewBag.HelpMessage2 = "Reminder: Purchase module will allow you to do the purchase cycle end to end. Start from: creating Purchase Order (PO) document => then goods receiving from vendor warehouse => then vendor billing => then finally vendor payment.";
+}
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+        <!-- Default box -->
+        <div class="box">
+            <div class="box-header with-border">
+                <h3 class="box-title text-primary"><i class="fa fa-money"></i> @ViewData["Title"]</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip"
+                            title="Collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="box-body">
+                <div id="Grid"></div>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer">
+               
+            </div>
+            <!-- /.box-footer-->
+        </div>
+        <!-- /.box -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<script id="templateForm" type="text/template">
+    <input hidden id="PaymentVoucherId" name="PaymentVoucherId" value="{{:PaymentVoucherId}}" />
+    <table cellspacing="10">
+        <tr>
+            <td>
+                Payment Voucher#
+            </td>
+            <td>
+                <input id="PaymentVoucherName" name="PaymentVoucherName" value="{{:PaymentVoucherName}}" />
+            </td>
+            <td>
+                Payment Date
+            </td>
+            <td>
+                <input id="PaymentDate" name="PaymentDate" value="{{:PaymentDate}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Bill
+            </td>
+            <td>
+                <input id="BillId" name="BillId" value="{{:BillId}}" />
+            </td>
+            <td>
+                IsFullPayment
+            </td>
+            <td>
+                <input id="IsFullPayment" name="IsFullPayment" value="{{:IsFullPayment}}" type="checkbox" checked />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Bill Amount
+            </td>
+            <td>
+                <input id="BillAmount" name="BillAmount" value="{{:BillAmount}}" />
+            </td>
+            <td>
+                Payment Amount
+            </td>
+            <td>
+                <input id="PaymentAmount" name="PaymentAmount" value="{{:PaymentAmount}}" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                PaymentType
+            </td>
+            <td>
+                <input id="PaymentTypeId" name="PaymentTypeId" value="{{:PaymentTypeId}}" />
+            </td>
+            <td>
+                Payment Source
+            </td>
+            <td>
+                <input id="CashBankId" name="CashBankId" value="{{:CashBankId}}" />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <div id="GridLine"></div>
+            </td>
+        </tr>
+    </table>
+</script>
+
+@section Styles{
+
+}
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+        var dataManagerBill;
+        var dataManagerPaymentType;
+        var dataManagerGoodsReceivedNote;
+        var dataManagerProduct;
+        var dataManagerCashBank;
+
+        $(function () {
+
+            bindDataFromWebApi();
+
+            var dataManager = ej.DataManager({
+                url: "/api/PaymentVoucher",
+                adaptor: new ej.WebApiAdaptor(),
+                offline: true
+            });
+
+
+
+            dataManager.ready.done(function (e) { 
+                $("#Grid").ejGrid({
+                    dataSource: ej.DataManager({
+                        json: e.result,
+                        adaptor: new ej.remoteSaveAdaptor(),
+                        insertUrl: "/api/PaymentVoucher/Insert",
+                        updateUrl: "/api/PaymentVoucher/Update",
+                        removeUrl: "/api/PaymentVoucher/Remove",
+                    }),
+                    toolbarSettings: {
+                        showToolbar: true,
+                        toolbarItems: ["add", "edit", "delete", "update", "cancel", "search", "printGrid"]
+                    },
+                    editSettings: {
+                        allowEditing: true,
+                        allowAdding: true,
+                        allowDeleting: true,
+                        showDeleteConfirmDialog: true,
+                        editMode: "dialogtemplate",
+                        dialogEditorTemplateID: "#templateForm",
+                    },
+                    isResponsive: true,
+                    enableResponsiveRow: true,
+                    allowSorting: true,
+                    allowSearching: true,
+                    allowFiltering: true,
+                    filterSettings: {
+                        filterType: "excel",
+                        maxFilterChoices: 100,
+                        enableCaseSensitivity: false
+                    },
+                    allowPaging: true,
+                    pageSettings: { pageSize: 10, printMode: ej.Grid.PrintMode.CurrentPage },
+                    columns: [
+                        { field: "PaymentVoucherId", type: 'number', headerText: 'Payment Voucher', defaultValue: 0, isPrimaryKey: true, isIdentity: true, visible: false },
+                        { field: "PaymentVoucherName", type: 'string', headerText: 'Payment Voucher#', allowEditing: false },
+                        { field: "IsFullPayment", headerText: 'Full Payment', allowEditing: false, type: 'boolean', editType: "booleanedit", defaultValue: true },
+                        { field: "BillId", type: 'number', headerText: 'Bill#', foreignKeyField: "BillId", foreignKeyValue: "BillName", dataSource: dataManagerBill, validationRules: { required: true } },
+                        { field: "PaymentDate", type: 'date', headerText: 'Payment Date', editType: "datepicker", format: "{0:MM/dd/yyyy}", validationRules: { required: true } },
+                        { field: "PaymentTypeId", type: 'number', headerText: 'Payment Type', foreignKeyField: "PaymentTypeId", foreignKeyValue: "PaymentTypeName", dataSource: dataManagerPaymentType },
+                        { field: "CashBankId", type: 'number', headerText: 'Payment Source', foreignKeyField: "CashBankId", foreignKeyValue: "CashBankName", dataSource: dataManagerCashBank },
+                        { field: "PaymentAmount", type: 'number', defaultValue: 0, headerText: 'Payment Amount', editType: "numericedit", format: "{0:n2}", validationRules: { required: true } },
+                        { field: "BillAmount", type: 'number', defaultValue: 0, headerText: 'Bill Amount', editType: "numericedit", format: "{0:n2}", validationRules: { required: true }, visible: false },
+                    ],
+                    actionComplete: "complete",
+                });
+            });
+
+            
+        });
+
+        function bindDataFromWebApi() {
+            dataManagerBill = ej.DataManager({
+                url: "/api/Bill",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerPaymentType = ej.DataManager({
+                url: "/api/PaymentType",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerCashBank = ej.DataManager({
+                url: "/api/CashBank",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerProduct = ej.DataManager({
+                url: "/api/Product",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+            dataManagerGoodsReceivedNote = ej.DataManager({
+                url: "/api/GoodsReceivedNote",
+                adaptor: new ej.WebApiAdaptor()
+            });
+
+        }
+
+        function complete(args) {
+
+            gridActionNotification(args);
+
+            if (args.requestType == 'beginedit') {
+                $("#" + this._id + "_dialogEdit").ejDialog({ title: "Edit Record" });
+            }
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+
+                bindDataFromWebApi();
+
+                formatFormControl(args);
+
+                if (args.requestType == 'add') {
+
+                    renderLine(0);
+
+                } else {
+
+                    renderLine(args.rowData.BillId);
+
+                }
+
+            }
+        }
+
+        function formatFormControl(args) {
+
+
+            $("#PaymentVoucherName").ejMaskEdit({
+                inputMode: 'Text',
+                enabled: false
+            });
+
+            $("#IsFullPayment").ejCheckBox({
+                enabled: false
+            });
+
+            $("#PaymentTypeId").ejDropDownList({
+                dataSource: dataManagerPaymentType,
+                fields: { value: "PaymentTypeId", text: "PaymentTypeName" },
+            });
+
+            $("#CashBankId").ejDropDownList({
+                dataSource: dataManagerCashBank,
+                fields: { value: "CashBankId", text: "CashBankName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Payment Source is required.' },
+            });
+
+            $("#PaymentDate").ejDatePicker({
+                validationRules: { required: true },
+                validationMessage: { required: 'Payment Date is required.' }
+            });
+
+            $("#PaymentAmount").ejNumericTextbox({
+                format: '{0:n2}',
+                enabled: false,
+                validationRules: { required: true },
+                validationMessage: { required: 'Payment Amount is required.' },
+            });
+
+            $("#BillAmount").ejNumericTextbox({
+                format: '{0:n2}',
+                enabled: false,
+            });
+
+            $("#BillId").ejDropDownList({
+                dataSource: dataManagerBill,
+                fields: { value: "BillId", text: "BillName" },
+                validationRules: { required: true },
+                validationMessage: { required: 'Bill is required.' }
+            });
+
+
+            if (args.requestType == 'beginedit' || args.requestType == 'add') {
+                var selected = $('#BillId').data('ejDropDownList');
+                var selectedValue = parseInt(selected.option('value'));
+                var selectedText = '';
+
+                var query = ej.Query()
+                    .select("BillId", "BillName");
+
+                var execute = dataManagerBill.executeQuery(query)
+                    .done(function (e) {
+                        var selectedObject = e.actual.Items.filter(function (entry) {
+                            return entry.BillId === selectedValue;
+                        });
+
+                        if (selectedObject.length > 0) {
+                            selectedText = selectedObject[0].BillName;
+                        }
+
+                        $.ajax({
+                            type: 'GET',
+                            url: "/api/Bill/GetNotPaidYet",
+                            success: function (data) {
+                                if (args.requestType == 'beginedit') {
+                                    data.push({ 'BillId': selectedValue, 'BillName': selectedText });
+                                }
+
+                                $("#BillId").ejDropDownList({
+                                    dataSource: data,
+                                    change: 'billDdlChange',
+                                    fields: { value: "BillId", text: "BillName" },
+                                    validationRules: { required: true },
+                                    validationMessage: { required: 'Bill is required.' },
+                                    value: (args.requestType == 'beginedit') ? selectedValue : 0
+                                });
+                            }
+                        });
+
+                    });
+
+
+            }
+
+
+        }
+
+        function billDdlChange(e) {
+            renderLine(e.selectedValue);
+        }
+
+        function renderLine(id) {
+
+            $.ajax({
+                url: "/api/Bill/GetAmount/" + id,
+                type: "GET",
+                success: function (e) {
+                    $('#PaymentAmount').ejNumericTextbox({ value: e.Amount });
+                    $('#BillAmount').ejNumericTextbox({ value: e.Amount });
+                }
+            });
+
+            var goodsReceivedNoteId = 0;
+
+            var q = ej.Query()
+                .select("BillId", "GoodsReceivedNoteId");
+
+            var e = dataManagerBill.executeQuery(q)
+                .done(function (ers) {
+                    var obj = ers.actual.Items.filter(function (item) {
+                        return item.BillId === id;
+                    });
+
+                    if (obj.length > 0) {
+                        goodsReceivedNoteId = obj[0].GoodsReceivedNoteId;
+                    }
+
+                    var purchaseOrderId = 0;
+
+                    var query = ej.Query()
+                        .select("PurchaseOrderId", "GoodsReceivedNoteId");
+
+                    var execute = dataManagerGoodsReceivedNote.executeQuery(query)
+                        .done(function (e) {
+
+                            var selectedObject = e.actual.Items.filter(function (entry) {
+                                return entry.GoodsReceivedNoteId === goodsReceivedNoteId;
+                            });
+
+                            if (selectedObject.length > 0) {
+                                purchaseOrderId = selectedObject[0].PurchaseOrderId;
+                            }
+
+                            $.ajax({
+                                url: '/api/PurchaseOrderLine',
+                                headers: { "PurchaseOrderId": purchaseOrderId },
+                                type: 'GET',
+                                success: function (data) {
+
+                                    $("#GridLine").ejGrid({
+                                        dataSource: ej.DataManager({
+                                            json: data.Items,
+                                            adaptor: new ej.remoteSaveAdaptor(),
+                                        }),
+                                        toolbarSettings: {
+                                            showToolbar: true,
+                                            toolbarItems: []
+                                        },
+                                        editSettings: {
+                                            allowEditing: false,
+                                            allowAdding: false,
+                                            allowDeleting: false,
+                                        },
+                                        isResponsive: true,
+                                        enableResponsiveRow: true,
+                                        allowSorting: true,
+                                        allowSearching: false,
+                                        allowFiltering: false,
+                                        allowPaging: false,
+                                        pageSettings: { pageSize: 10 },
+                                        columns: [
+                                            { field: "PurchaseOrderLineId", headerText: 'Line Id', isPrimaryKey: true, isIdentity: true, visible: false },
+                                            { field: "ProductId", headerText: 'Product', foreignKeyField: "ProductId", foreignKeyValue: "ProductName", dataSource: dataManagerProduct },
+                                            { field: "Quantity", headerText: 'Qty', defaultValue: 1, editType: "numericedit", format: "{0:n2}" },
+                                        ],
+                                    });
+                                }
+                            })
+
+
+
+                        });
+
+
+                });
+
+
+
+
+
+
+        }
+
+
+
+
+
+    </script>
+}
+
